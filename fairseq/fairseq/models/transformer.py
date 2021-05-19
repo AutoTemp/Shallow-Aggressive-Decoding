@@ -684,6 +684,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         alignment_heads: Optional[int] = None,
         src_lengths: Optional[Any] = None,
         return_all_hiddens: bool = False,
+        parallel_forward_start_pos: Optional[int] = None
     ):
         """
         Args:
@@ -710,6 +711,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             full_context_alignment=full_context_alignment,
             alignment_layer=alignment_layer,
             alignment_heads=alignment_heads,
+            parallel_forward_start_pos=parallel_forward_start_pos
         )
         if not features_only:
             x = self.output_layer(x)
@@ -723,6 +725,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         full_context_alignment: bool = False,
         alignment_layer: Optional[int] = None,
         alignment_heads: Optional[int] = None,
+        parallel_forward_start_pos: Optional[int] = None
     ):
         return self.extract_features_scriptable(
             prev_output_tokens,
@@ -731,6 +734,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             full_context_alignment,
             alignment_layer,
             alignment_heads,
+            parallel_forward_start_pos
         )
 
     """
@@ -747,6 +751,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         full_context_alignment: bool = False,
         alignment_layer: Optional[int] = None,
         alignment_heads: Optional[int] = None,
+        parallel_forward_start_pos: Optional[int] = None
     ):
         """
         Similar to *forward* but only return features.
@@ -767,22 +772,36 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 - the decoder's features of shape `(batch, tgt_len, embed_dim)`
                 - a dictionary with any model-specific outputs
         """
+
+        # mode                      incremental_state   parallel_forward_start_pos
+        # train                     None                None
+        # one-by-one inference      not None            None
+        # aggressive inference      not None            not None
+
         if alignment_layer is None:
             alignment_layer = self.num_layers - 1
 
         # embed positions
         positions = (
             self.embed_positions(
-                prev_output_tokens, incremental_state=incremental_state
+                prev_output_tokens,
+                incremental_state=incremental_state if parallel_forward_start_pos is None else None
             )
             if self.embed_positions is not None
             else None
         )
 
-        if incremental_state is not None:
-            prev_output_tokens = prev_output_tokens[:, -1:]
-            if positions is not None:
-                positions = positions[:, -1:]
+        original_len = None
+        if incremental_state is not None: # inference
+            if parallel_forward_start_pos is None:  # one-by-one
+                prev_output_tokens = prev_output_tokens[:, -1:]
+                if positions is not None:
+                    positions = positions[:, -1:]
+            else:  # aggressive
+                original_len = prev_output_tokens.size(1)
+                prev_output_tokens = prev_output_tokens[:, start_forward_pos:]
+                if positions is not None:
+                    positions = positions[:, start_forward_pos:]
 
         # embed tokens and positions
         x = self.embed_scale * self.embed_tokens(prev_output_tokens)
@@ -812,9 +831,12 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         attn: Optional[Tensor] = None
         inner_states: List[Optional[Tensor]] = [x]
         for idx, layer in enumerate(self.layers):
-            if incremental_state is None and not full_context_alignment:
-                self_attn_mask = self.buffered_future_mask(x)
-            else:
+            # train | aggressive inference
+            if (incremental_state is None or parallel_forward_start_pos is not None) and not full_context_alignment:
+                self_attn_mask = self.buffered_future_mask(x, dim=original_len)
+                if parallel_forward_start_pos is not None:
+                    self_attn_mask = self_attn_mask[parallel_forward_start_pos:]
+            else: # one-by-one inference
                 self_attn_mask = None
 
             x, layer_attn, _ = layer(
@@ -870,8 +892,10 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             return self.max_target_positions
         return min(self.max_target_positions, self.embed_positions.max_positions)
 
-    def buffered_future_mask(self, tensor):
-        dim = tensor.size(0)
+    def buffered_future_mask(self, tensor, dim=None):
+        # tensor: t, b, h
+        if dim is None:
+            dim = tensor.size(0)
         # self._future_mask.device != tensor.device is not working in TorchScript. This is a workaround.
         if (
             self._future_mask.size(0) == 0
