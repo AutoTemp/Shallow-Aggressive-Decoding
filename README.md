@@ -1,6 +1,16 @@
 # Shallow-Aggressive-Decoding
 Codes for the paper "Instantaneous Grammatical Error Correction with Shallow Aggressive Decoding" (ACL-IJCNLP 2021)
 
+## Installation
+
+```
+conda create -n SAD python=3.6
+conda activate SAD
+conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.1 -c pytorch
+cd fairseq
+pip install --editable .
+```
+
 ## Usage
 This section explains how to decode in different ways.
 ```
