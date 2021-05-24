@@ -7,7 +7,7 @@ Codes for the paper "Instantaneous Grammatical Error Correction with Shallow Agg
 ```
 conda create -n SAD python=3.6
 conda activate SAD
-conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.1 -c pytorch
+conda install pytorch==1.5.1 torchvision==0.6.1 cudatoolkit=10.2 -c pytorch
 cd fairseq
 pip install --editable .
 ```
