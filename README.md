@@ -36,7 +36,7 @@ Codes for the paper "Instantaneous Grammatical Error Correction with Shallow Agg
 </table>
 
 <table>
-  <caption> The performance of 12+2 BART-Init. </caption>
+  <caption> For reference, the beam=1 and beam=5 results of the state-of-the-art 12+2 (BART-Init) are: </caption>
 <thead>
   <tr>
     <th>12+2 BART-Init</th>
