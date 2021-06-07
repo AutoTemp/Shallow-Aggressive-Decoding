@@ -74,6 +74,7 @@ Codes for the paper "Instantaneous Grammatical Error Correction with Shallow Agg
   </tr>
 </tbody>
 </table>
+The above models are all single models without ensemble.
 
 ## Installation
 
