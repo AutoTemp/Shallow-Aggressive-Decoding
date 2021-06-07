@@ -2,6 +2,79 @@
 Codes for the paper "Instantaneous Grammatical Error Correction with Shallow Aggressive Decoding" (ACL-IJCNLP 2021)
 ![SAD](aggdec.gif)
 
+## Results
+<table>
+  <caption> The performance and online inference efficiency evaluation of baseline and our approach in CoNLL-14. </caption>
+  <tr> 
+    <th> Model </th> 
+    <th> P </th>
+    <th> R </th>
+    <th> F<sub>0.5</sub> </th>
+    <th> Speedup </th>
+  </tr>
+  <tr>
+    <th> Transformer-big (beam=5) </th>
+    <th> 73.0 </th>
+    <th> 38.1 </th>
+    <th> 61.6 </th>
+    <th> 1.0x </th>
+  </tr>
+  <tr>
+    <th> Our approach (9+3) </th>
+    <th> 73.3 </th>
+    <th> 41.3 </th>
+    <th> 63.5 </th>
+    <th> 10.3x </th>
+  </tr>
+  <tr>
+    <th> Our approach (12+2 BART-Init) </th>
+    <th> 71.0 </th>
+    <th> 52.8 </th>
+    <th> 66.4 </th>
+    <th> 9.6x </th>
+  </tr>
+</table>
+
+<table>
+  <caption> The performance of 12+2 BART-Init. </caption>
+<thead>
+  <tr>
+    <th>12+2 BART-Init</th>
+    <th colspan="3">CoNLL-14</th>
+    <th colspan="3">BEA-19</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <th>Beam</th>
+    <th>P</th>
+    <th>R</th>
+    <th>F<sub>0.5</sub></th>
+    <th>P</th>
+    <th>R</th>
+    <th>F<sub>0.5</sub></th>
+  </tr>
+  <tr>
+    <th>1</td>
+    <th>71.0</th>
+    <th>52.8</th>
+    <th>66.4</th>
+    <th>74.7</th>
+    <th>66.4</th>
+    <th>72.9</th>
+  </tr>
+  <tr>
+    <th>5</th>
+    <th>71.4</td>
+    <th>52.8</td>
+    <th>66.7</td>
+    <th>75.8</td>
+    <th>66.3</td>
+    <th>73.7</td>
+  </tr>
+</tbody>
+</table>
+
 ## Installation
 
 ```
